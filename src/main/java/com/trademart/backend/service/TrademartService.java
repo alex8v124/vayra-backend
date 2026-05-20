@@ -27,10 +27,24 @@ public class TrademartService {
     private ReporteRepository reporteRepository;
     @Autowired
     private UsuarioRepository usuarioRepository;
+    @Autowired
+    private PlanningRepository planningRepository;
+    @Autowired
+    private EquipoComercialRepository equipoComercialRepository;
+
+    public List<EquipoComercial> getEquiposComerciales() { return equipoComercialRepository.findAll(); }
+    public EquipoComercial saveEquipoComercial(EquipoComercial eq) { return equipoComercialRepository.save(eq); }
+    public void deleteEquipoComercial(Integer id) { equipoComercialRepository.deleteById(id); }
 
     public List<Producto> getProductos() { return productoRepository.findAll(); }
     public Producto saveProducto(Producto p) { return productoRepository.save(p); }
     public void deleteProducto(Integer id) { productoRepository.deleteById(id); }
+
+    // ==== PLANNING ====
+    public List<Planning> getPlannings() { return planningRepository.findAll(); }
+    public List<Planning> getPlanningsByUsuarioId(Integer usuarioId) { return planningRepository.findByUsuarioId(usuarioId); }
+    public Planning savePlanning(Planning p) { return planningRepository.save(p); }
+    public void deletePlanning(Integer id) { planningRepository.deleteById(id); }
 
     public List<Pdv> getPdvs() { return pdvRepository.findAll(); }
     public Pdv savePdv(Pdv p) { return pdvRepository.save(p); }

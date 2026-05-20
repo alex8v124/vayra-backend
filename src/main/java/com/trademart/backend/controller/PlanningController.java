@@ -1,0 +1,93 @@
+package com.trademart.backend.controller;
+
+import com.trademart.backend.model.Planning;
+import com.trademart.backend.service.TrademartService;
+import com.trademart.backend.repository.PdvRepository;
+import com.trademart.backend.repository.UsuarioRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/data/plannings")
+public class PlanningController {
+
+    @Autowired
+    private TrademartService trademartService;
+
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private PdvRepository pdvRepository;
+
+    @GetMapping
+    public List<Map<String, Object>> getAllPlannings() {
+        List<Planning> plannings = trademartService.getPlannings();
+        List<Map<String, Object>> response = new ArrayList<>();
+
+        for (Planning p : plannings) {
+            Map<String, Object> map = new HashMap<>();
+            map.put("planningId", p.getPlanningId());
+            map.put("usuarioId", p.getUsuarioId());
+            map.put("pdvId", p.getPdvId());
+            map.put("pmIds", p.getPmIds());
+            map.put("actIds", p.getActIds());
+            map.put("fechaInicio", p.getFechaInicio());
+            map.put("fechaFin", p.getFechaFin());
+            map.put("estado", p.getEstado());
+
+            // Fetch mercaderista name
+            usuarioRepository.findById(p.getUsuarioId()).ifPresentOrElse(
+                u -> map.put("mercaderistaName", (u.getFirstname() == null ? "" : u.getFirstname()) + " " + (u.getLastname() == null ? "" : u.getLastname())),
+                () -> map.put("mercaderistaName", "Desconocido")
+            );
+
+            // Fetch PDV name
+            pdvRepository.findById(p.getPdvId()).ifPresentOrElse(
+                pdv -> map.put("pdvNombre", pdv.getPdvNombre()),
+                () -> map.put("pdvNombre", "Desconocido")
+            );
+
+            response.add(map);
+        }
+        return response;
+    }
+
+    @PostMapping
+    public Planning createPlanning(@RequestBody Planning planning) {
+        return trademartService.savePlanning(planning);
+    }
+
+    @PutMapping("/{id}")
+    public Planning updatePlanning(@PathVariable Integer id, @RequestBody Planning planningDetails) {
+        Planning planning = trademartService.getPlannings().stream()
+                .filter(p -> p.getPlanningId().equals(id))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Planning not found with id " + id));
+
+        planning.setUsuarioId(planningDetails.getUsuarioId());
+        planning.setPdvId(planningDetails.getPdvId());
+        planning.setPmIds(planningDetails.getPmIds());
+        planning.setActIds(planningDetails.getActIds());
+        planning.setFechaInicio(planningDetails.getFechaInicio());
+        planning.setFechaFin(planningDetails.getFechaFin());
+        if (planningDetails.getEstado() != null) {
+            planning.setEstado(planningDetails.getEstado());
+        }
+
+        return trademartService.savePlanning(planning);
+    }
+
+    @DeleteMapping("/{id}")
+    public Map<String, Boolean> deletePlanning(@PathVariable Integer id) {
+        trademartService.deletePlanning(id);
+        Map<String, Boolean> response = new HashMap<>();
+        response.put("deleted", Boolean.TRUE);
+        return response;
+    }
+}

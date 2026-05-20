@@ -8,6 +8,7 @@ import java.util.List;
 @AllArgsConstructor
 public class LoginResponse {
     private String token;
+    private Integer id;
     private String username;
     private String email;
     private String firstname;
@@ -15,4 +16,5 @@ public class LoginResponse {
     private String name;
     private String role;
     private List<String> roles;
+    private String equipoComercial;
 }

@@ -151,4 +151,14 @@ public class DataController {
     // ==== USUARIOS ====
     @GetMapping("/usuarios")
     public List<Usuario> getUsuarios() { return trademartService.getUsuarios(); }
+
+    // ==== EQUIPOS COMERCIALES ====
+    @GetMapping("/equipos")
+    public List<EquipoComercial> getEquipos() { return trademartService.getEquiposComerciales(); }
+    @PostMapping("/equipos")
+    public EquipoComercial addEquipo(@RequestBody EquipoComercial eq) { return trademartService.saveEquipoComercial(eq); }
+    @PutMapping("/equipos/{id}")
+    public EquipoComercial updateEquipo(@PathVariable Integer id, @RequestBody EquipoComercial eq) { eq.setEquipoId(id); return trademartService.saveEquipoComercial(eq); }
+    @DeleteMapping("/equipos/{id}")
+    public void deleteEquipo(@PathVariable Integer id) { trademartService.deleteEquipoComercial(id); }
 }

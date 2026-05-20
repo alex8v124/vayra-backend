@@ -40,7 +40,8 @@ public class UsuarioController {
                 "name", (u.getFirstname() == null ? "" : u.getFirstname()) + " " + (u.getLastname() == null ? "" : u.getLastname()),
                 "email", u.getEmail() == null ? "" : u.getEmail(),
                 "role", roleName,
-                "status", u.getEstado() != null && u.getEstado() ? "Activo" : "Inactivo"
+                "status", u.getEstado() != null && u.getEstado() ? "Activo" : "Inactivo",
+                "equipoComercial", u.getEquipoComercial() == null ? "" : u.getEquipoComercial()
             );
         }).collect(Collectors.toList());
     }
@@ -54,6 +55,9 @@ public class UsuarioController {
         String rawPassword = payload.getOrDefault("password", "xplora2026");
         u.setPassword(passwordEncoder.encode(rawPassword));
         u.setEstado(true);
+        if (payload.containsKey("equipoComercial")) {
+            u.setEquipoComercial(payload.get("equipoComercial"));
+        }
         Usuario saved = usuarioRepository.save(u);
 
         String role = payload.getOrDefault("role", "mercaderista").toLowerCase();
@@ -92,6 +96,9 @@ public class UsuarioController {
         }
         if (payload.containsKey("password") && !payload.get("password").trim().isEmpty()) {
             u.setPassword(passwordEncoder.encode(payload.get("password")));
+        }
+        if (payload.containsKey("equipoComercial")) {
+            u.setEquipoComercial(payload.get("equipoComercial"));
         }
         
         usuarioRepository.save(u);

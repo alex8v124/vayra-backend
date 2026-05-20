@@ -27,6 +27,9 @@ public class Usuario {
 
     private Boolean estado = true;
 
+    @Column(name = "equipo_comercial")
+    private String equipoComercial;
+
     @Column(name = "fecha_creacion", insertable = false, updatable = false)
     private LocalDateTime fechaCreacion;
 

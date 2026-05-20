@@ -44,13 +44,15 @@ public class AuthController {
 
             return ResponseEntity.ok(new LoginResponse(
                     jwt, 
+                    userDetails.getUsuario().getUsuarioId(),
                     userDetails.getUsername(), 
                     userDetails.getUsuario().getEmail(),
                     userDetails.getUsuario().getFirstname(),
                     userDetails.getUsuario().getLastname(),
                     userDetails.getUsuario().getFirstname() + " " + userDetails.getUsuario().getLastname(),
                     primaryRole,
-                    roles
+                    roles,
+                    userDetails.getUsuario().getEquipoComercial() == null ? "" : userDetails.getUsuario().getEquipoComercial()
             ));
         } catch (org.springframework.security.core.AuthenticationException e) {
             return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)

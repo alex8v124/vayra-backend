@@ -52,7 +52,7 @@ public class UsuarioController {
         u.setUsername(payload.get("email")); // using email as username for simplicity
         u.setEmail(payload.get("email"));
         u.setFirstname(payload.get("name"));
-        String rawPassword = payload.getOrDefault("password", "xplora2026");
+        String rawPassword = payload.getOrDefault("password", "vayra2026");
         u.setPassword(passwordEncoder.encode(rawPassword));
         u.setEstado(true);
         if (payload.containsKey("equipoComercial")) {

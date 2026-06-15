@@ -38,6 +38,7 @@ public class TrademartService {
 
     public List<Producto> getProductos() { return productoRepository.findAll(); }
     public Producto saveProducto(Producto p) { return productoRepository.save(p); }
+    public List<Producto> saveAllProductos(List<Producto> pList) { return productoRepository.saveAll(pList); }
     public void deleteProducto(Integer id) { productoRepository.deleteById(id); }
 
     // ==== PLANNING ====

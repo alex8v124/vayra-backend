@@ -38,11 +38,11 @@ public class Reporte {
     @Column(name = "actividad")
     private String actividad;
 
-    @Column(name = "observaciones")
+    @Column(name = "observaciones", columnDefinition = "TEXT")
     private String observaciones;
 
     // Legacy fields mapped just in case Supabase schema needs them (nullable)
-    @Column(name = "reporte")
+    @Column(name = "reporte", columnDefinition = "TEXT")
     private String reporte;
     
     @Column(name = "tipo_reporte")
@@ -64,6 +64,6 @@ public class Reporte {
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Pm pm;
 
-    @Column(name = "fotos")
+    @Column(name = "fotos", columnDefinition = "TEXT")
     private String fotos;
 }

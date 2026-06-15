@@ -27,9 +27,6 @@ public class Pdv {
     @Column(name = "estado")
     private String estado;
 
-    @Column(name = "mercaderista")
-    private String mercaderista;
-
     @Column(name = "visitas")
     private Integer visitas;
 

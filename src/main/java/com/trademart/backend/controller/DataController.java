@@ -18,6 +18,8 @@ public class DataController {
     public List<Producto> getProductos() { return trademartService.getProductos(); }
     @PostMapping("/productos")
     public Producto addProducto(@RequestBody Producto p) { return trademartService.saveProducto(p); }
+    @PostMapping("/productos/bulk")
+    public List<Producto> addProductosBulk(@RequestBody List<Producto> productos) { return trademartService.saveAllProductos(productos); }
     @PutMapping("/productos/{id}")
     public Producto updateProducto(@PathVariable Integer id, @RequestBody Producto p) { p.setProductoId(id); return trademartService.saveProducto(p); }
     @DeleteMapping("/productos/{id}")

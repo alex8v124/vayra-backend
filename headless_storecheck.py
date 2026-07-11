@@ -118,6 +118,36 @@ def generar_storecheck(config_path):
     if skus_seleccionados:
         df_modificado_v2 = df_modificado_v2[df_modificado_v2["PRODUCTO"].isin(skus_seleccionados)]
 
+    # === INYECTAR CRONOGRAMA ===
+    if df_crono is not None and not df_crono.empty and "fecha" in df_crono.columns:
+        _rows_crono = []
+        for _, _cr_row in df_crono.iterrows():
+            _c_fecha = _cr_row.get("fecha")
+            _c_merc = str(_cr_row.get("MERCADO", "")).strip()
+            _c_puesto = str(_cr_row.get("nroPuesto", "")).strip()
+            _c_encarg = str(_cr_row.get("encargado", "")).strip()
+            _c_puesto_full = f"{_c_puesto}: {_c_encarg}"
+
+            if not _c_merc:
+                continue
+
+            for _sku in (skus_seleccionados if skus_seleccionados else ["DUMMY_SKU"]):
+                _rows_crono.append({
+                    "PDV_nombre":        _c_merc, # Usamos el mercado como PDV simulado temporalmente
+                    "FECHA":             _c_fecha,
+                    "PUESTO DE MERCADO": _c_puesto_full,
+                    "Act. Promocional":  promocion_elegida,
+                    "PRODUCTO":          _sku,
+                    "STOCK FINAL":       np.nan,
+                    "STOCK INICIAL":     np.nan,
+                })
+        
+        if _rows_crono:
+            _df_crono_inject = pd.DataFrame(_rows_crono)
+            df_modificado_v2 = pd.concat([df_modificado_v2, _df_crono_inject], ignore_index=True)
+            # Removemos el DUMMY_SKU si se agregó
+            df_modificado_v2 = df_modificado_v2[df_modificado_v2["PRODUCTO"] != "DUMMY_SKU"]
+
     required_cols = ["PDV_nombre", "FECHA", "PUESTO DE MERCADO", "Act. Promocional", "PRODUCTO", "STOCK FINAL", "STOCK INICIAL"]
     missing = [c for c in required_cols if c not in df_modificado_v2.columns]
     if missing:
@@ -154,6 +184,18 @@ def generar_storecheck(config_path):
         _pv = _clean_val(_info_m.get("Ciudad", "N/A"))
         _dv = _clean_val(_info_m.get("DEX",    "N/A"))
         _prov_dex_map[str(_pdv_m).strip()] = (_pv, _dv)
+        _mc = str(_info_m.get("MERCADO_CRONO", "")).strip()
+        if _mc:
+            _prov_dex_map[_mc] = (_pv, _dv)
+            
+    # Also add from crono_data directly if available
+    if df_crono is not None and not df_crono.empty:
+        for _, _cr in df_crono.iterrows():
+            _c_merc = str(_cr.get("MERCADO", "")).strip()
+            _c_ciu = _clean_val(_cr.get("Ciudad", "N/A"))
+            _c_dex = _clean_val(_cr.get("DEX", "N/A"))
+            if _c_merc and _c_merc not in _prov_dex_map:
+                _prov_dex_map[_c_merc] = (_c_ciu, _c_dex)
 
     def _get_prov(pdv): return _prov_dex_map.get(str(pdv).strip(), ("N/A", "N/A"))[0]
     def _get_dex(pdv): return _prov_dex_map.get(str(pdv).strip(), ("N/A", "N/A"))[1]

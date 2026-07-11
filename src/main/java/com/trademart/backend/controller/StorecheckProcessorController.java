@@ -30,12 +30,12 @@ public class StorecheckProcessorController {
 
         try {
             String tempId = UUID.randomUUID().toString();
-            File tempDir = new File("temp_sc_" + tempId);
-            if (!tempDir.exists()) tempDir.mkdirs();
+            Path tempDirPath = Files.createTempDirectory("temp_sc_" + tempId);
+            File tempDir = tempDirPath.toFile();
 
-            // Guardar excel base
+            // Guardar excel base usando la ruta absoluta para que transferTo no falle
             File baseFile = new File(tempDir, "base.xlsx");
-            file.transferTo(baseFile);
+            file.transferTo(baseFile.getAbsoluteFile());
 
             // Generar archivo JSON de configuración
             ObjectMapper mapper = new ObjectMapper();

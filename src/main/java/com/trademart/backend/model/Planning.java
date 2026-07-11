@@ -21,6 +21,9 @@ public class Planning {
     @Column(name = "pm_ids")
     private String pmIds; // Lista de IDs de puestos de mercado asignados, ej: "1,2,3"
 
+    @Column(name = "dias_semana_pms", columnDefinition = "TEXT")
+    private String diasSemanaPms; // JSON mapeando pmId a día de la semana, ej: "{\"1\":\"Lunes\", \"2\":\"Martes\"}"
+
     @Column(name = "act_ids")
     private String actIds; // Lista de IDs de actividades promocionales asignadas, ej: "10,11"
 

@@ -11,6 +11,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 @SpringBootApplication
 public class BackendApplication {
@@ -19,8 +20,19 @@ public class BackendApplication {
 	}
 
 	@Bean
-	CommandLineRunner initDatabase(UsuarioRepository usuarioRepository, RolRepository rolRepository, UsuarioRolRepository usuarioRolRepository, PasswordEncoder passwordEncoder) {
+	CommandLineRunner initDatabase(UsuarioRepository usuarioRepository, RolRepository rolRepository, UsuarioRolRepository usuarioRolRepository, PasswordEncoder passwordEncoder, JdbcTemplate jdbcTemplate) {
 		return args -> {
+			try {
+				jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS plan_rutas (id BIGSERIAL PRIMARY KEY, nombre VARCHAR(255) NOT NULL, datos_json TEXT NOT NULL);");
+				jdbcTemplate.execute("ALTER TABLE cronogramas ADD COLUMN IF NOT EXISTS plan_ruta_id BIGINT;");
+				jdbcTemplate.execute("ALTER TABLE cronogramas ADD COLUMN IF NOT EXISTS fecha_inicio VARCHAR(255);");
+				jdbcTemplate.execute("ALTER TABLE cronogramas ADD COLUMN IF NOT EXISTS fecha_fin VARCHAR(255);");
+				jdbcTemplate.execute("ALTER TABLE cronogramas ADD COLUMN IF NOT EXISTS planning_ids TEXT;");
+				jdbcTemplate.execute("ALTER TABLE planning ADD COLUMN IF NOT EXISTS dias_semana_pms TEXT;");
+			} catch (Exception e) {
+				System.err.println("Error initializing schema manually: " + e.getMessage());
+			}
+
 			if (usuarioRepository.count() == 0) {
 				Rol adminRol = new Rol();
 				adminRol.setRolNombre("admin");

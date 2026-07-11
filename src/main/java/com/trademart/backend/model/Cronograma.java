@@ -14,6 +14,13 @@ public class Cronograma {
     @Column(nullable = false)
     private String nombre;
 
+    @Column(name = "planning_ids")
+    private String planningIds;
+    
+    private String fechaInicio;
+    
+    private String fechaFin;
+
     @Column(columnDefinition = "TEXT", nullable = false)
-    private String datosJson; // Almacenará la lista de Ciudad, MERCADO, DEX
+    private String datosJson;
 }

@@ -30,28 +30,32 @@ public class PlanningController {
         List<Planning> plannings = trademartService.getPlannings();
         List<Map<String, Object>> response = new ArrayList<>();
 
+        // Fetch all users and PDVs into maps to avoid N+1 queries
+        Map<Integer, String> userNamesMap = new HashMap<>();
+        usuarioRepository.findAll().forEach(u -> 
+            userNamesMap.put(u.getUsuarioId(), (u.getFirstname() == null ? "" : u.getFirstname()) + " " + (u.getLastname() == null ? "" : u.getLastname()))
+        );
+
+        Map<Integer, String> pdvNamesMap = new HashMap<>();
+        pdvRepository.findAll().forEach(pdv -> 
+            pdvNamesMap.put(pdv.getPdvId(), pdv.getPdvNombre())
+        );
+
         for (Planning p : plannings) {
             Map<String, Object> map = new HashMap<>();
             map.put("planningId", p.getPlanningId());
             map.put("usuarioId", p.getUsuarioId());
             map.put("pdvId", p.getPdvId());
             map.put("pmIds", p.getPmIds());
+            map.put("diasSemanaPms", p.getDiasSemanaPms());
             map.put("actIds", p.getActIds());
             map.put("fechaInicio", p.getFechaInicio());
             map.put("fechaFin", p.getFechaFin());
             map.put("estado", p.getEstado());
 
-            // Fetch mercaderista name
-            usuarioRepository.findById(p.getUsuarioId()).ifPresentOrElse(
-                u -> map.put("mercaderistaName", (u.getFirstname() == null ? "" : u.getFirstname()) + " " + (u.getLastname() == null ? "" : u.getLastname())),
-                () -> map.put("mercaderistaName", "Desconocido")
-            );
-
-            // Fetch PDV name
-            pdvRepository.findById(p.getPdvId()).ifPresentOrElse(
-                pdv -> map.put("pdvNombre", pdv.getPdvNombre()),
-                () -> map.put("pdvNombre", "Desconocido")
-            );
+            // Get names from maps (O(1)) instead of querying the DB (N+1)
+            map.put("mercaderistaName", userNamesMap.getOrDefault(p.getUsuarioId(), "Desconocido"));
+            map.put("pdvNombre", pdvNamesMap.getOrDefault(p.getPdvId(), "Desconocido"));
 
             response.add(map);
         }
@@ -73,6 +77,7 @@ public class PlanningController {
         planning.setUsuarioId(planningDetails.getUsuarioId());
         planning.setPdvId(planningDetails.getPdvId());
         planning.setPmIds(planningDetails.getPmIds());
+        planning.setDiasSemanaPms(planningDetails.getDiasSemanaPms());
         planning.setActIds(planningDetails.getActIds());
         planning.setFechaInicio(planningDetails.getFechaInicio());
         planning.setFechaFin(planningDetails.getFechaFin());

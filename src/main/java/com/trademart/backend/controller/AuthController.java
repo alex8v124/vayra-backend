@@ -52,7 +52,8 @@ public class AuthController {
                     userDetails.getUsuario().getFirstname() + " " + userDetails.getUsuario().getLastname(),
                     primaryRole,
                     roles,
-                    userDetails.getUsuario().getEquipoComercial() == null ? "" : userDetails.getUsuario().getEquipoComercial()
+                    userDetails.getUsuario().getEquipoComercial() == null ? "" : userDetails.getUsuario().getEquipoComercial(),
+                    userDetails.getUsuario().getPdvsAsignados() == null ? "" : userDetails.getUsuario().getPdvsAsignados()
             ));
         } catch (org.springframework.security.core.AuthenticationException e) {
             return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)

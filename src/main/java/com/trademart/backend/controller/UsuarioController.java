@@ -35,14 +35,15 @@ public class UsuarioController {
             List<UsuarioRol> userRoles = usuarioRolRepository.findByUsuario_UsuarioId(u.getUsuarioId());
             String roleName = userRoles.isEmpty() ? "mercaderista" : userRoles.get(0).getRol().getRolNombre().toLowerCase();
             
-            return Map.<String, Object>of(
-                "id", u.getUsuarioId(),
-                "name", (u.getFirstname() == null ? "" : u.getFirstname()) + " " + (u.getLastname() == null ? "" : u.getLastname()),
-                "email", u.getEmail() == null ? "" : u.getEmail(),
-                "role", roleName,
-                "status", u.getEstado() != null && u.getEstado() ? "Activo" : "Inactivo",
-                "equipoComercial", u.getEquipoComercial() == null ? "" : u.getEquipoComercial()
-            );
+            java.util.Map<String, Object> map = new java.util.HashMap<>();
+            map.put("id", u.getUsuarioId());
+            map.put("name", (u.getFirstname() == null ? "" : u.getFirstname()) + " " + (u.getLastname() == null ? "" : u.getLastname()));
+            map.put("email", u.getEmail() == null ? "" : u.getEmail());
+            map.put("role", roleName);
+            map.put("status", u.getEstado() != null && u.getEstado() ? "Activo" : "Inactivo");
+            map.put("equipoComercial", u.getEquipoComercial() == null ? "" : u.getEquipoComercial());
+            map.put("pdvsAsignados", u.getPdvsAsignados() == null ? "" : u.getPdvsAsignados());
+            return map;
         }).collect(Collectors.toList());
     }
 
@@ -57,6 +58,9 @@ public class UsuarioController {
         u.setEstado(true);
         if (payload.containsKey("equipoComercial")) {
             u.setEquipoComercial(payload.get("equipoComercial"));
+        }
+        if (payload.containsKey("pdvsAsignados")) {
+            u.setPdvsAsignados(payload.get("pdvsAsignados"));
         }
         Usuario saved = usuarioRepository.save(u);
 
@@ -99,6 +103,9 @@ public class UsuarioController {
         }
         if (payload.containsKey("equipoComercial")) {
             u.setEquipoComercial(payload.get("equipoComercial"));
+        }
+        if (payload.containsKey("pdvsAsignados")) {
+            u.setPdvsAsignados(payload.get("pdvsAsignados"));
         }
         
         usuarioRepository.save(u);

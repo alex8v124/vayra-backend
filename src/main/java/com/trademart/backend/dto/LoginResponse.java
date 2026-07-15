@@ -17,4 +17,5 @@ public class LoginResponse {
     private String role;
     private List<String> roles;
     private String equipoComercial;
+    private String pdvsAsignados;
 }

@@ -30,6 +30,9 @@ public class Usuario {
     @Column(name = "equipo_comercial")
     private String equipoComercial;
 
+    @Column(name = "pdvs_asignados", columnDefinition = "TEXT")
+    private String pdvsAsignados;
+
     @Column(name = "fecha_creacion", insertable = false, updatable = false)
     private LocalDateTime fechaCreacion;
 

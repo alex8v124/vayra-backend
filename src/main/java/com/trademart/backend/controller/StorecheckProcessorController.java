@@ -49,14 +49,27 @@ public class StorecheckProcessorController {
             File configFile = new File(tempDir, "config.json");
             mapper.writeValue(configFile, configObj);
 
-            // Determinar ubicación de headless_storecheck.py (en scripts/ o raíz)
+            // Determinar ubicación de headless_storecheck.py (en scripts/ o raíz o /app/)
             File scriptFile = new File("scripts/headless_storecheck.py");
             if (!scriptFile.exists()) {
                 scriptFile = new File("headless_storecheck.py");
             }
+            if (!scriptFile.exists()) {
+                scriptFile = new File("/app/scripts/headless_storecheck.py");
+            }
+            if (!scriptFile.exists()) {
+                scriptFile = new File("/app/headless_storecheck.py");
+            }
+
+            String pythonCmd = "python";
+            try {
+                new ProcessBuilder("python", "--version").start().waitFor();
+            } catch (Exception e) {
+                pythonCmd = "python3";
+            }
 
             // Ejecutar Python
-            ProcessBuilder pb = new ProcessBuilder("python", scriptFile.getAbsolutePath(), configFile.getAbsolutePath());
+            ProcessBuilder pb = new ProcessBuilder(pythonCmd, scriptFile.getAbsolutePath(), configFile.getAbsolutePath());
             pb.redirectErrorStream(true);
             Process process = pb.start();
 
@@ -69,6 +82,7 @@ public class StorecheckProcessorController {
             int exitCode = process.waitFor();
 
             if (exitCode != 0 || !outputFile.exists()) {
+                System.err.println("ERROR EJECUTANDO PYTHON: exitCode=" + exitCode + "\nOutput:\n" + output.toString());
                 throw new RuntimeException("Error en Python: " + output.toString());
             }
 

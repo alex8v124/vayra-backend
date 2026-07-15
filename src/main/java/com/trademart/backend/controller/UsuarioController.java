@@ -33,7 +33,7 @@ public class UsuarioController {
     public List<Map<String, Object>> getUsuarios() {
         return usuarioRepository.findAll().stream().map(u -> {
             List<UsuarioRol> userRoles = usuarioRolRepository.findByUsuario_UsuarioId(u.getUsuarioId());
-            String roleName = userRoles.isEmpty() ? "mercaderista" : userRoles.get(0).getRol().getRolNombre();
+            String roleName = userRoles.isEmpty() ? "mercaderista" : userRoles.get(0).getRol().getRolNombre().toLowerCase();
             
             return Map.<String, Object>of(
                 "id", u.getUsuarioId(),
@@ -61,7 +61,7 @@ public class UsuarioController {
         Usuario saved = usuarioRepository.save(u);
 
         String role = payload.getOrDefault("role", "mercaderista").toLowerCase();
-        Rol r = rolRepository.findByRolNombre(role).orElseGet(() -> {
+        Rol r = rolRepository.findByRolNombreIgnoreCase(role).orElseGet(() -> {
             Rol newRol = new Rol();
             newRol.setRolNombre(role);
             return rolRepository.save(newRol);
@@ -105,7 +105,7 @@ public class UsuarioController {
 
         if (payload.containsKey("role")) {
             String roleStr = payload.get("role").toLowerCase();
-            Rol r = rolRepository.findByRolNombre(roleStr).orElseGet(() -> {
+            Rol r = rolRepository.findByRolNombreIgnoreCase(roleStr).orElseGet(() -> {
                 Rol newRol = new Rol();
                 newRol.setRolNombre(roleStr);
                 return rolRepository.save(newRol);

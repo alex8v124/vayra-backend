@@ -35,9 +35,11 @@ public class BackendApplication {
 
 			// 1. Crear o actualizar usuario admin por defecto si no existe
 			if (usuarioRepository.count() == 0) {
-				Rol adminRol = new Rol();
-				adminRol.setRolNombre("admin");
-				adminRol = rolRepository.save(adminRol);
+				Rol adminRol = rolRepository.findByRolNombreIgnoreCase("admin").orElseGet(() -> {
+					Rol r = new Rol();
+					r.setRolNombre("admin");
+					return rolRepository.save(r);
+				});
 
 				Usuario admin = new Usuario();
 				admin.setUsername("admin");
@@ -74,6 +76,51 @@ public class BackendApplication {
 					}
 				});
 				System.out.println("Hashes de usuarios verificados/actualizados para login exitoso.");
+			}
+
+			// 3. Asegurar que existan los roles y usuarios Controller y Analista en la base de datos
+			if (usuarioRepository.findByUsername("controller@trademart.com").isEmpty()) {
+				Rol ctrlRol = rolRepository.findByRolNombreIgnoreCase("controller").orElseGet(() -> {
+					Rol r = new Rol();
+					r.setRolNombre("controller");
+					return rolRepository.save(r);
+				});
+				Usuario uCtrl = new Usuario();
+				uCtrl.setUsername("controller@trademart.com");
+				uCtrl.setEmail("controller@trademart.com");
+				uCtrl.setFirstname("Carlos");
+				uCtrl.setLastname("Controller");
+				uCtrl.setPassword(passwordEncoder.encode("vayra2026"));
+				uCtrl.setEstado(true);
+				uCtrl = usuarioRepository.save(uCtrl);
+
+				UsuarioRol ur = new UsuarioRol();
+				ur.setUsuario(uCtrl);
+				ur.setRol(ctrlRol);
+				usuarioRolRepository.save(ur);
+				System.out.println("Usuario Carlos Controller creado.");
+			}
+
+			if (usuarioRepository.findByUsername("analista@trademart.com").isEmpty()) {
+				Rol anRol = rolRepository.findByRolNombreIgnoreCase("analista").orElseGet(() -> {
+					Rol r = new Rol();
+					r.setRolNombre("analista");
+					return rolRepository.save(r);
+				});
+				Usuario uAn = new Usuario();
+				uAn.setUsername("analista@trademart.com");
+				uAn.setEmail("analista@trademart.com");
+				uAn.setFirstname("Lucia");
+				uAn.setLastname("Analista");
+				uAn.setPassword(passwordEncoder.encode("vayra2026"));
+				uAn.setEstado(true);
+				uAn = usuarioRepository.save(uAn);
+
+				UsuarioRol ur = new UsuarioRol();
+				ur.setUsuario(uAn);
+				ur.setRol(anRol);
+				usuarioRolRepository.save(ur);
+				System.out.println("Usuario Lucia Analista creado.");
 			}
 		};
 	}

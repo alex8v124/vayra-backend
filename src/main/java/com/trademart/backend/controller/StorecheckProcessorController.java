@@ -49,8 +49,14 @@ public class StorecheckProcessorController {
             File configFile = new File(tempDir, "config.json");
             mapper.writeValue(configFile, configObj);
 
+            // Determinar ubicación de headless_storecheck.py (en scripts/ o raíz)
+            File scriptFile = new File("scripts/headless_storecheck.py");
+            if (!scriptFile.exists()) {
+                scriptFile = new File("headless_storecheck.py");
+            }
+
             // Ejecutar Python
-            ProcessBuilder pb = new ProcessBuilder("python", "headless_storecheck.py", configFile.getAbsolutePath());
+            ProcessBuilder pb = new ProcessBuilder("python", scriptFile.getAbsolutePath(), configFile.getAbsolutePath());
             pb.redirectErrorStream(true);
             Process process = pb.start();
 

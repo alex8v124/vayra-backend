@@ -5,15 +5,13 @@ Write-Host "Iniciando monitoreo Xplora (Prometheus & Grafana) con Podman..." -Fo
 podman machine start 2>$null
 
 
-# 1. Crear red de podman si no existe
-podman network exists xplora-net
-if ($LASTEXITCODE -ne 0) {
-    podman network create xplora-net
-}
+# 1. Detener y eliminar contenedores previos si existen
+podman stop -t 0 xplora-prometheus xplora-grafana 2>$null
+podman rm -f xplora-prometheus xplora-grafana 2>$null
 
-# 2. Detener y eliminar contenedores previos si existen
-podman rm -f xplora-prometheus 2>$null
-podman rm -f xplora-grafana 2>$null
+# 2. Recrear red de Podman limpia para purgar reglas NAT antiguas de Netavark
+podman network rm -f xplora-net 2>$null
+podman network create xplora-net
 
 # 3. Obtener ruta absoluta (convertir a formato POSIX para montajes en Podman WSL/Linux si es necesario)
 $pwdPath = (Get-Item .).FullName.Replace('\', '/')

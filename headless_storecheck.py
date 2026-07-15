@@ -34,13 +34,13 @@ def generar_storecheck(config_path):
         print(json.dumps({"error": f"La columna '{columna}' no existe en el excel base"}))
         sys.exit(1)
 
-    df_f = df[df[columna] == promocion_elegida]
-    
+    df_f = df[df["Act. Promocional"] == promocion_elegida]
     seleccionados = list(mapeo_mercados.keys())
-    if not seleccionados:
-        seleccionados = df_f["PDV_nombre"].dropna().unique().tolist()
+    if seleccionados and any(p in df_f["PDV_nombre"].values for p in seleccionados):
+        df_modificado = df_f[df_f["PDV_nombre"].isin(seleccionados)]
+    else:
+        df_modificado = df_f.copy()
     
-    df_modificado = df_f[df_f["PDV_nombre"].isin(seleccionados)]
     df_modificado_v2 = df_modificado[df_modificado["PRODUCTO"].notna()].copy()
 
     # (Lógica de inyectar informe anterior omitida por brevedad en esta versión headless básica, 
@@ -248,7 +248,7 @@ def generar_storecheck(config_path):
         pv = pv[cols_pv]
 
     cols_numericas = [c for c in pv.select_dtypes(include='number').columns]
-    pv[cols_numericas] = pv[cols_numericas].replace(0, np.nan)
+    # No reemplazamos 0 por np.nan para conservar los datos en Stock sin actividad
 
     if _orden_mercados:
         _pv_orden = {m: i for i, m in enumerate(_orden_mercados)}

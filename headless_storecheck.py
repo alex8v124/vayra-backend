@@ -244,8 +244,7 @@ def generar_storecheck(config_path):
         columns='PRODUCTO',
         values=["STOCK INICIAL", 'STOCK FINAL'],
         aggfunc='sum',
-        fill_value=0,
-        dropna=False
+        fill_value=0
     )
 
     if isinstance(pv.columns, pd.MultiIndex):
@@ -273,7 +272,7 @@ def generar_storecheck(config_path):
         pv = pv[cols_pv]
 
     cols_numericas = [c for c in pv.select_dtypes(include='number').columns]
-    # No reemplazamos 0 por np.nan para conservar los datos en Stock sin actividad
+    pv[cols_numericas] = pv[cols_numericas].replace(0, np.nan)
 
     if _orden_mercados:
         _pv_orden = {m: i for i, m in enumerate(_orden_mercados)}
@@ -334,14 +333,7 @@ def generar_storecheck(config_path):
     _total_row['STOCK TOTAL'] = resumen_stock_final['STOCK TOTAL'].sum()
     resumen_stock_final = pd.concat([resumen_stock_final, pd.DataFrame([_total_row])], ignore_index=True)
 
-    df_modificado_v8 = df_modificado_v7.copy()
-    df_modificado_v8["STOCK INICIAL"] = df_modificado_v8["STOCK INICIAL"].replace(0, np.nan)
-    df_modificado_v8["STOCK FINAL"]   = df_modificado_v8["STOCK FINAL"].replace(0, np.nan)
-    df_modificado_v8_drop = df_modificado_v8[["MERCADO", "PROVINCIA", "NOMBRE CLIENTE"]].drop_duplicates()
-    df_modificado_v10 = df_modificado_v8_drop.groupby(["PROVINCIA", "MERCADO"]).size().reset_index(name='PUESTOS DE MERCADO')
-    df_modificado_v10["PUESTOS ATENDIDOS POR ALICORP"] = df_modificado_v10["PUESTOS DE MERCADO"]
-    df_modificado_v10["PRESENCIA  DEL PRODUCTO"]       = df_modificado_v10["PUESTOS DE MERCADO"]
-    df_modificado_v10["COBERTURA TOTAL (Puestos Atendidos por Alicorp)"] = '100%'
+    # df_modificado_v10 (Resumen) se construye más adelante desde pv_tb2
 
     MARCAS_DICT = {
         "ALA": "Alacena", "ALP": "Alpesa", "AMA": "Amaras", "ANG": "Angel",

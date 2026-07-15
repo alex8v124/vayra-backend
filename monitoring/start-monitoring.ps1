@@ -23,12 +23,22 @@ if ($pwdPath -match '^([a-zA-Z]):/(.*)') {
 
 Write-Host "Ruta de montaje detectada: $pwdMount" -ForegroundColor Gray
 
+# Obtener la IP del host Windows accesible desde Podman (WSL Gateway) o usar host-gateway si falla
+$hostIp = "host-gateway"
+try {
+    $routeMatch = (podman machine ssh ip route show 2>$null | Select-String 'default via (\d+\.\d+\.\d+\.\d+)').Matches
+    if ($routeMatch.Count -gt 0) {
+        $hostIp = $routeMatch[0].Groups[1].Value
+        Write-Host "IP del host Windows detectada en Podman WSL: $hostIp" -ForegroundColor Cyan
+    }
+} catch {}
+
 # 4. Levantar Prometheus
 podman run -d --name xplora-prometheus --network xplora-net `
     -p 9090:9090 `
     -v "${pwdMount}/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro" `
-    --add-host host.containers.internal:host-gateway `
-    --add-host host.docker.internal:host-gateway `
+    --add-host host.containers.internal:${hostIp} `
+    --add-host host.docker.internal:${hostIp} `
     docker.io/prom/prometheus:latest `
     --config.file=/etc/prometheus/prometheus.yml `
     --storage.tsdb.path=/prometheus

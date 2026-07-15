@@ -1,6 +1,10 @@
 # start-monitoring.ps1
 Write-Host "Iniciando monitoreo Xplora (Prometheus & Grafana) con Podman..." -ForegroundColor Cyan
 
+# 0. Asegurar que la máquina virtual de Podman está iniciada
+podman machine start 2>$null
+
+
 # 1. Crear red de podman si no existe
 podman network exists xplora-net
 if ($LASTEXITCODE -ne 0) {

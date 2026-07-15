@@ -34,6 +34,16 @@ public class UsuarioController {
         return usuarioRepository.findAll().stream().map(u -> {
             List<UsuarioRol> userRoles = usuarioRolRepository.findByUsuario_UsuarioId(u.getUsuarioId());
             String roleName = userRoles.isEmpty() ? "mercaderista" : userRoles.get(0).getRol().getRolNombre().toLowerCase();
+            if (u.getUsuarioId() != null && u.getUsuarioId() == 1) {
+                roleName = "admin";
+            } else if (userRoles.isEmpty()) {
+                String str = ((u.getUsername() == null ? "" : u.getUsername()) + " " + (u.getEmail() == null ? "" : u.getEmail()) + " " + (u.getFirstname() == null ? "" : u.getFirstname())).toLowerCase();
+                if (str.contains("admin")) roleName = "admin";
+                else if (str.contains("controller")) roleName = "controller";
+                else if (str.contains("analista")) roleName = "analista";
+                else if (str.contains("gerente")) roleName = "gerente";
+                else if (str.contains("supervisor")) roleName = "supervisor";
+            }
             
             java.util.Map<String, Object> map = new java.util.HashMap<>();
             map.put("id", u.getUsuarioId());

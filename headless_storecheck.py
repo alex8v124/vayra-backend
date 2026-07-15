@@ -399,9 +399,10 @@ def generar_storecheck(config_path):
     directorio = os.path.dirname(os.path.abspath(output_file))
     backend_dir = os.path.dirname(os.path.abspath(__file__))
     def _col_letter(n):
+        if n <= 0:
+            return 'A'
         s = ""
-        n += 1
-        while n:
+        while n > 0:
             n, r = divmod(n - 1, 26)
             s = chr(65 + r) + s
         return s
@@ -1063,10 +1064,10 @@ def generar_storecheck(config_path):
                             if col_num in sku_col_idxs_sc:
                                 _sku_name = df.columns[col_num]
                                 _sa_r     = _sa_detail_row_map.get(row_data.name, None)
-                                _sa_ci    = _sa_sku_cols.get(_sku_name, None)
+                                _sa_ci    = _sa_sku_cols.get(_sku_name, _sa_sku_cols_sf.get(_sku_name, None))
                                 if _sa_r is not None and _sa_ci is not None:
                                     _sa_col_l = gcl(_sa_ci + 1)
-                                    formula = f"=IF('STOCK SIN ACTIVIDAD'!${_sa_col_l}${_sa_r}>1,1,\"\")"
+                                    formula = f"=IF('STOCK SIN ACTIVIDAD'!${_sa_col_l}${_sa_r}>0,1,\"\")"
                                     worksheet.write_formula(current_row, col_num, formula, sc_number_format)
                                 else:
                                     val = 1 if pd.notna(cell_value) and cell_value != 0 else ''

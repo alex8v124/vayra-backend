@@ -33,14 +33,15 @@ public class BackendApplication {
 				System.err.println("Error initializing schema manually: " + e.getMessage());
 			}
 
+			// 1. Crear o actualizar usuario admin por defecto si no existe
 			if (usuarioRepository.count() == 0) {
 				Rol adminRol = new Rol();
 				adminRol.setRolNombre("admin");
 				adminRol = rolRepository.save(adminRol);
 
 				Usuario admin = new Usuario();
-				admin.setUsername("admin@trademart.pe");
-				admin.setEmail("admin@trademart.pe");
+				admin.setUsername("admin");
+				admin.setEmail("admin@trademart.com");
 				admin.setFirstname("Administrador");
 				admin.setLastname("Sistema");
 				admin.setPassword(passwordEncoder.encode("admin123"));
@@ -53,6 +54,26 @@ public class BackendApplication {
 				usuarioRolRepository.save(ur);
 				
 				System.out.println("Usuario administrador por defecto creado.");
+			} else {
+				// 2. Si ya existen usuarios del seed SQL con hash dummy "$2a$10$xyz", actualizarlos a un BCrypt real de "admin123"
+				usuarioRepository.findAll().forEach(u -> {
+					boolean changed = false;
+					if (u.getPassword() == null || u.getPassword().equals("$2a$10$xyz") || !u.getPassword().startsWith("$2a$")) {
+						u.setPassword(passwordEncoder.encode("admin123"));
+						changed = true;
+					}
+					if ("admin".equalsIgnoreCase(u.getUsername()) || "admin@trademart.com".equalsIgnoreCase(u.getEmail()) || "admin@trademart.pe".equalsIgnoreCase(u.getEmail())) {
+						u.setPassword(passwordEncoder.encode("admin123"));
+						if (!"admin@trademart.com".equalsIgnoreCase(u.getEmail())) {
+							u.setEmail("admin@trademart.com");
+						}
+						changed = true;
+					}
+					if (changed) {
+						usuarioRepository.save(u);
+					}
+				});
+				System.out.println("Hashes de usuarios verificados/actualizados para login exitoso.");
 			}
 		};
 	}

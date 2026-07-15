@@ -34,13 +34,26 @@ def generar_storecheck(config_path):
         print(json.dumps({"error": f"La columna '{columna}' no existe en el excel base"}))
         sys.exit(1)
 
-    df_f = df[df[columna] == promocion_elegida]
+    df_promos = df["Act. Promocional"].astype(str).str.strip()
+    promo_target = str(promocion_elegida).strip()
+    df_f = df[df_promos == promo_target]
+    if df_f.empty and promo_target:
+        df_f = df[df_promos.str.lower() == promo_target.lower()]
+    if df_f.empty and promo_target:
+        df_f = df[df_promos.str.lower().str.contains(promo_target.lower(), na=False)]
+    if df_f.empty:
+        df_f = df.copy()
+
+    seleccionados = [str(k).strip() for k in mapeo_mercados.keys()]
+    if seleccionados:
+        df_pdv_clean = df_f["PDV_nombre"].astype(str).str.strip()
+        if any(p in df_pdv_clean.values for p in seleccionados):
+            df_modificado = df_f[df_pdv_clean.isin(seleccionados)].copy()
+        else:
+            df_modificado = df_f.copy()
+    else:
+        df_modificado = df_f.copy()
     
-    seleccionados = list(mapeo_mercados.keys())
-    if not seleccionados:
-        seleccionados = df_f["PDV_nombre"].dropna().unique().tolist()
-    
-    df_modificado = df_f[df_f["PDV_nombre"].isin(seleccionados)]
     df_modificado_v2 = df_modificado[df_modificado["PRODUCTO"].notna()].copy()
 
     # (Lógica de inyectar informe anterior omitida por brevedad en esta versión headless básica, 
@@ -119,7 +132,7 @@ def generar_storecheck(config_path):
         df_modificado_v2 = df_modificado_v2[df_modificado_v2["PRODUCTO"].isin(skus_seleccionados)]
 
     # === INYECTAR CRONOGRAMA ===
-    if df_crono is not None and not df_crono.empty and "fecha" in df_crono.columns:
+    if df_modificado_v2.empty and df_crono is not None and not df_crono.empty and "fecha" in df_crono.columns:
         _rows_crono = []
         for _, _cr_row in df_crono.iterrows():
             _c_fecha = _cr_row.get("fecha")
@@ -154,14 +167,25 @@ def generar_storecheck(config_path):
         print(json.dumps({"error": f"Faltan columnas en el excel base: {missing}"}))
         sys.exit(1)
 
-    df_modificado_v3 = df_modificado_v2[required_cols]
-    df_modificado_v4 = df_modificado_v3.groupby(["PDV_nombre", "FECHA", "PUESTO DE MERCADO", "Act. Promocional", "PRODUCTO"])[["STOCK INICIAL", "STOCK FINAL"]].sum().reset_index()
+    df_modificado_v3 = df_modificado_v2[required_cols].copy()
+    split_cols = df_modificado_v3['PUESTO DE MERCADO'].astype(str).str.split(r'[:·]', n=1, expand=True)
+    if not split_cols.empty and 0 in split_cols.columns:
+        df_modificado_v3['N° de puesto'] = split_cols[0].str.strip()
+    else:
+        df_modificado_v3['N° de puesto'] = df_modificado_v3['PUESTO DE MERCADO'].astype(str).str.strip()
+    df_modificado_v3['NOMBRE CLIENTE'] = split_cols[1].str.strip().fillna("") if (not split_cols.empty and 1 in split_cols.columns) else ""
+    df_modificado_v3['NOMBRE CLIENTE'] = df_modificado_v3['NOMBRE CLIENTE'].replace({"nan": "", "None": ""})
+
+    client_map = df_modificado_v3[df_modificado_v3['NOMBRE CLIENTE'] != ""].groupby(['PDV_nombre', 'N° de puesto'])['NOMBRE CLIENTE'].first().to_dict()
+    def _fill_client(row):
+        if not row['NOMBRE CLIENTE']:
+            return client_map.get((row['PDV_nombre'], row['N° de puesto']), "")
+        return row['NOMBRE CLIENTE']
+    df_modificado_v3['NOMBRE CLIENTE'] = df_modificado_v3.apply(_fill_client, axis=1)
+
+    df_modificado_v4 = df_modificado_v3.groupby(["PDV_nombre", "FECHA", "N° de puesto", "NOMBRE CLIENTE", "Act. Promocional", "PRODUCTO"], dropna=False)[["STOCK INICIAL", "STOCK FINAL"]].sum().reset_index()
 
     df_modificado_v5 = df_modificado_v4.copy()
-    df_modificado_v5 = df_modificado_v5.rename(columns={'PUESTO DE MERCADO': 'NOMBRE CLIENTE'})
-    split_cols = df_modificado_v5['NOMBRE CLIENTE'].str.split(':', n=1, expand=True)
-    df_modificado_v5['N° de puesto'] = split_cols[0].str.strip()
-    df_modificado_v5['NOMBRE CLIENTE'] = split_cols[1].str.strip() if 1 in split_cols.columns else df_modificado_v5['NOMBRE CLIENTE']
 
     df_modificado_v7 = df_modificado_v5.copy()
     df_modificado_v7["PROVINCIA"] = "N/A"
@@ -253,7 +277,7 @@ def generar_storecheck(config_path):
     if _orden_mercados:
         _pv_orden = {m: i for i, m in enumerate(_orden_mercados)}
         pv["_ord"] = pv["MERCADO"].map(_pv_orden).fillna(9999)
-        pv = pv.sort_values(by=["_ord", "N° de puesto"]).drop(columns=["_ord"]).reset_index(drop=True)
+        pv = pv.sort_values(by=["_ord", "MERCADO", "N° de puesto"]).drop(columns=["_ord"]).reset_index(drop=True)
     else:
         pv = pv.sort_values(by=['MERCADO', 'N° de puesto']).reset_index(drop=True)
 
@@ -287,7 +311,7 @@ def generar_storecheck(config_path):
             _row[_sn] = _s if not pd.isna(_s) else 0
         _resumen_rows.append(_row)
 
-    resumen_stock_final = pd.DataFrame(_resumen_rows)
+    resumen_stock_final = pd.DataFrame(_resumen_rows, columns=['CIUDAD', 'MERCADO', 'PUESTOS DE MERCADO'] + _sku_names)
 
     if _orden_mercados:
         resumen_stock_final["_ord"] = resumen_stock_final["MERCADO"].map(
@@ -309,14 +333,7 @@ def generar_storecheck(config_path):
     _total_row['STOCK TOTAL'] = resumen_stock_final['STOCK TOTAL'].sum()
     resumen_stock_final = pd.concat([resumen_stock_final, pd.DataFrame([_total_row])], ignore_index=True)
 
-    df_modificado_v8 = df_modificado_v7.copy()
-    df_modificado_v8["STOCK INICIAL"] = df_modificado_v8["STOCK INICIAL"].replace(0, np.nan)
-    df_modificado_v8["STOCK FINAL"]   = df_modificado_v8["STOCK FINAL"].replace(0, np.nan)
-    df_modificado_v8_drop = df_modificado_v8[["MERCADO", "PROVINCIA", "NOMBRE CLIENTE"]].drop_duplicates()
-    df_modificado_v10 = df_modificado_v8_drop.groupby(["PROVINCIA", "MERCADO"]).size().reset_index(name='PUESTOS DE MERCADO')
-    df_modificado_v10["PUESTOS ATENDIDOS POR ALICORP"] = df_modificado_v10["PUESTOS DE MERCADO"]
-    df_modificado_v10["PRESENCIA  DEL PRODUCTO"]       = df_modificado_v10["PUESTOS DE MERCADO"]
-    df_modificado_v10["COBERTURA TOTAL (Puestos Atendidos por Alicorp)"] = '100%'
+    # df_modificado_v10 (Resumen) se construye más adelante desde pv_tb2
 
     MARCAS_DICT = {
         "ALA": "Alacena", "ALP": "Alpesa", "AMA": "Amaras", "ANG": "Angel",
@@ -360,7 +377,7 @@ def generar_storecheck(config_path):
     if _orden_mercados:
         _pvt_orden = {m: i for i, m in enumerate(_orden_mercados)}
         pv_tb2["_ord"] = pv_tb2["MERCADO"].map(_pvt_orden).fillna(9999)
-        pv_tb2 = pv_tb2.sort_values(by=["_ord", "N° Puesto"]).drop(columns=["_ord"]).reset_index(drop=True)
+        pv_tb2 = pv_tb2.sort_values(by=["_ord", "MERCADO", "N° Puesto"]).drop(columns=["_ord"]).reset_index(drop=True)
     else:
         pv_tb2 = pv_tb2.sort_values(by=['MERCADO', 'N° Puesto']).reset_index(drop=True)
 
@@ -385,7 +402,7 @@ def generar_storecheck(config_path):
             'PRESENCIA  DEL PRODUCTO': _puestos,
             'COBERTURA TOTAL (Puestos Atendidos por Alicorp)': '100%',
         })
-    df_modificado_v10 = pd.DataFrame(_c1_rows)
+    df_modificado_v10 = pd.DataFrame(_c1_rows, columns=['CIUDAD', 'MERCADO', 'PUESTOS DE MERCADO', 'PUESTOS ATENDIDOS POR ALICORP', 'PRESENCIA  DEL PRODUCTO', 'COBERTURA TOTAL (Puestos Atendidos por Alicorp)'])
 
     if _orden_mercados:
         df_modificado_v10["_ord"] = df_modificado_v10["MERCADO"].map({m: i for i, m in enumerate(_orden_mercados)}).fillna(9999)
@@ -1064,7 +1081,7 @@ def generar_storecheck(config_path):
                             if col_num in sku_col_idxs_sc:
                                 _sku_name = df.columns[col_num]
                                 _sa_r     = _sa_detail_row_map.get(row_data.name, None)
-                                _sa_ci    = _sa_sku_cols.get(_sku_name, _sa_sku_cols_sf.get(_sku_name, None))
+                                _sa_ci    = _sa_sku_cols_sf.get(_sku_name, _sa_sku_cols.get(_sku_name, None))
                                 if _sa_r is not None and _sa_ci is not None:
                                     _sa_col_l = gcl(_sa_ci + 1)
                                     formula = f"=IF('STOCK SIN ACTIVIDAD'!${_sa_col_l}${_sa_r}>0,1,\"\")"

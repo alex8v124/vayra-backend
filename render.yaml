@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: xplora-backend
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /actuator/health
